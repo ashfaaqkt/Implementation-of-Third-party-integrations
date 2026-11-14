@@ -1,0 +1,91 @@
+# Fleet Management System – Third-party Integrations, API Gateway
+# Author : Ashfaaq Feroz Muhammad | BITS ID: 2023EBCS005
+# Course : Backend and API Development – BITS Pilani
+# File   : demo.http – VS Code "REST Client" walkthrough (click "Send Request" above each block)
+
+@gateway = http://localhost:8080
+@apiKey = devkey123
+
+### 1. Gateway health (no API key)
+GET {{gateway}}/health
+
+### 2. Login as admin
+# @name login
+POST {{gateway}}/api/users/login
+x-api-key: {{apiKey}}
+Content-Type: application/json
+
+{ "email": "admin@fleet.local", "password": "Admin@123" }
+
+###
+@token = {{login.response.body.token}}
+
+### 3. Register a vehicle by address (geocoded with OpenStreetMap)
+# @name created
+POST {{gateway}}/api/vehicles
+x-api-key: {{apiKey}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "registrationNumber": "KL-07-RC-1001", "make": "Tata", "model": "Intra V30", "type": "truck", "address": "Marine Drive, Kochi" }
+
+###
+@vehicleId = {{created.response.body.vehicle.id}}
+
+### 4. Send telemetry
+POST {{gateway}}/api/telemetry
+x-api-key: {{apiKey}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "vehicleId": "{{vehicleId}}", "lat": 9.9816, "lng": 76.2999, "speed": 38, "fuelLevel": 64, "batteryVoltage": 12.7, "engineTemp": 86 }
+
+### 5. Nearby vehicles within 3 km
+GET {{gateway}}/api/vehicles/nearby?lat=9.9816&lng=76.2999&radiusKm=3
+x-api-key: {{apiKey}}
+Authorization: Bearer {{token}}
+
+### 6. Critical event – low battery → SMS to admins
+POST {{gateway}}/api/telemetry
+x-api-key: {{apiKey}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "vehicleId": "{{vehicleId}}", "lat": 9.9816, "lng": 76.2999, "speed": 0, "batteryVoltage": 11.1, "engineTemp": 84 }
+
+### 7. Status change → SMS to admins, managers, driver
+PATCH {{gateway}}/api/vehicles/{{vehicleId}}/status
+x-api-key: {{apiKey}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "status": "maintenance", "reason": "Scheduled brake inspection" }
+
+### 8. Manual SMS to a number that always fails (ends in 0000)
+POST {{gateway}}/api/notifications/sms
+x-api-key: {{apiKey}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "to": "+919800000000", "message": "This SMS will fail on purpose" }
+
+### 9. Notifications list and stats
+GET {{gateway}}/api/notifications?limit=5
+x-api-key: {{apiKey}}
+Authorization: Bearer {{token}}
+
+###
+GET {{gateway}}/api/notifications/stats
+x-api-key: {{apiKey}}
+Authorization: Bearer {{token}}
+
+### 10. Missing API key → 401
+GET {{gateway}}/api/vehicles
+
+### 11. Wrong API key → 403
+GET {{gateway}}/api/vehicles
+x-api-key: wrong-key
+
+### 12. Unknown route → 404
+GET {{gateway}}/api/spaceships
+x-api-key: {{apiKey}}

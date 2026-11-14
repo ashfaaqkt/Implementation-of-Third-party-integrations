@@ -1,0 +1,392 @@
+<!doctype html>
+<!--
+/**
+ * Fleet Management System – Third-party Integrations, API Gateway
+ * Author : Ashfaaq Feroz Muhammad | BITS ID: 2023EBCS005
+ * Course : Backend and API Development – BITS Pilani
+ * File   : public/map.html – Leaflet map UI: vehicle markers by status, address search and nearby-vehicle radius search
+ */
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fleet Map – Ashfaaq Feroz Muhammad (2023EBCS005)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <style>
+    :root {
+      --navy: #1e293b;
+      --navy-2: #0f172a;
+      --amber: #f59e0b;
+      --amber-dark: #b45309;
+      --bg: #f1f5f9;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --input: #ffffff;
+      --active: #16a34a;
+      --idle: #2563eb;
+      --maintenance: #f59e0b;
+      --offline: #6b7280;
+      --emergency: #dc2626;
+      --radius: 10px;
+    }
+    [data-theme="dark"] {
+      --bg: #0b1220;
+      --panel: #111a2e;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #22304a;
+      --input: #0f172a;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column;
+    }
+
+    /* ---------- header / footer ---------- */
+    header {
+      background: var(--navy); color: #fff; border-bottom: 4px solid var(--amber);
+      padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    header .logo { font-size: 22px; }
+    header h1 { font-size: 17px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+    header .sub { color: #cbd5e1; font-size: 12.5px; }
+    header .spacer { flex: 1; }
+    header .links a { color: var(--amber); text-decoration: none; margin-left: 14px; font-weight: 600; font-size: 13px; }
+    header .links a:hover { text-decoration: underline; }
+    .theme-toggle {
+      background: transparent; color: #fff; border: 1px solid #475569; border-radius: 999px;
+      padding: 5px 12px; cursor: pointer; font: inherit; font-size: 12.5px;
+    }
+    .theme-toggle:hover { border-color: var(--amber); }
+    footer {
+      background: var(--navy); color: #cbd5e1; text-align: center; padding: 8px 16px; font-size: 12.5px;
+      border-top: 3px solid var(--amber);
+    }
+    footer strong { color: #fff; }
+
+    /* ---------- layout ---------- */
+    main { flex: 1; display: grid; grid-template-columns: 360px 1fr; min-height: 0; }
+    aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--border); }
+    #map { min-height: 400px; height: 100%; }
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+      aside { border-right: 0; border-bottom: 1px solid var(--border); order: 2; }
+      #map { height: 60vh; order: 1; }
+      header .links { width: 100%; }
+      header .links a:first-child { margin-left: 0; }
+    }
+
+    /* ---------- cards & form ---------- */
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+    .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 0 0 10px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+    input {
+      width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--input); color: var(--text); font: inherit;
+    }
+    input:focus { outline: 2px solid var(--amber); outline-offset: 0; border-color: var(--amber); }
+    .row { display: flex; gap: 8px; }
+    .row > * { flex: 1; }
+    button.btn {
+      margin-top: 10px; width: 100%; padding: 9px 12px; border: 0; border-radius: 8px; cursor: pointer;
+      background: var(--amber); color: var(--navy-2); font: inherit; font-weight: 650;
+    }
+    button.btn:hover { filter: brightness(1.05); }
+    button.btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    button.btn:disabled { opacity: .6; cursor: progress; }
+    .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .status-line { font-size: 12.5px; margin-top: 8px; min-height: 18px; }
+    .ok { color: var(--active); } .err { color: var(--emergency); }
+    details summary { cursor: pointer; color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+    /* ---------- results & legend ---------- */
+    .results { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+    .results li {
+      display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .results li:hover { background: color-mix(in srgb, var(--amber) 10%, transparent); }
+    .results .reg { font-weight: 650; }
+    .results .meta { color: var(--muted); font-size: 12px; }
+    .results .dist { margin-left: auto; font-weight: 650; white-space: nowrap; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+    .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+    .legend span { display: flex; align-items: center; gap: 8px; font-size: 13px; text-transform: capitalize; }
+    .count { float: right; color: var(--muted); font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+    /* ---------- markers ---------- */
+    .vmarker { position: relative; }
+    .vmarker .pin {
+      width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.45);
+    }
+    .vmarker.emergency .pin { animation: pulse 1.2s infinite; }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(220,38,38,.7); }
+      70% { box-shadow: 0 0 0 14px rgba(220,38,38,0); }
+      100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+    }
+    .center-pin { width: 14px; height: 14px; background: var(--navy); border: 3px solid var(--amber); border-radius: 3px; transform: rotate(45deg); }
+    .leaflet-popup-content { font: 13px/1.45 system-ui, sans-serif; }
+    .leaflet-popup-content b { font-size: 14px; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; color: #fff; font-size: 11.5px; font-weight: 650; text-transform: uppercase; }
+    [data-theme="dark"] .leaflet-popup-content-wrapper, [data-theme="dark"] .leaflet-popup-tip { background: var(--panel); color: var(--text); }
+    [data-theme="dark"] .leaflet-control-zoom a { background: var(--panel); color: var(--text); border-color: var(--border); }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">🚚</span>
+    <div>
+      <h1>Fleet Management System – Live Map</h1>
+      <div class="sub">Third-party Integrations, API Gateway · Ashfaaq Feroz Muhammad (2023EBCS005)</div>
+    </div>
+    <span class="spacer"></span>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark map">🌙 Dark map</button>
+    <nav class="links"><a href="/api-docs" target="_blank" rel="noopener">API Docs</a><a href="/health" target="_blank" rel="noopener">Health</a></nav>
+  </header>
+
+  <main>
+    <aside>
+      <section class="card">
+        <h2>1 · Connect</h2>
+        <label for="apiKey">API key (x-api-key)</label>
+        <input id="apiKey" value="devkey123" autocomplete="off" />
+        <div class="row">
+          <div><label for="email">Email</label><input id="email" value="admin@fleet.local" autocomplete="username" /></div>
+          <div><label for="password">Password</label><input id="password" type="password" value="Admin@123" autocomplete="current-password" /></div>
+        </div>
+        <button class="btn" id="loginBtn" type="button">Log in &amp; load vehicles</button>
+        <details>
+          <summary>…or paste a JWT</summary>
+          <label for="jwt">Bearer token</label>
+          <input id="jwt" placeholder="eyJhbGciOi..." autocomplete="off" />
+          <button class="btn secondary" id="useJwtBtn" type="button">Use token</button>
+        </details>
+        <div class="status-line" id="authStatus"></div>
+      </section>
+
+      <section class="card">
+        <h2>2 · Find nearby vehicles</h2>
+        <label for="address">Address (geocoded with OpenStreetMap)</label>
+        <div class="row">
+          <input id="address" placeholder="e.g. Vyttila, Kochi" />
+        </div>
+        <button class="btn secondary" id="geocodeBtn" type="button">📍 Locate address</button>
+        <div class="row">
+          <div><label for="lat">Latitude</label><input id="lat" inputmode="decimal" placeholder="9.9658" /></div>
+          <div><label for="lng">Longitude</label><input id="lng" inputmode="decimal" placeholder="76.2856" /></div>
+        </div>
+        <label for="radius">Radius: <b id="radiusLabel">5</b> km</label>
+        <input id="radius" type="range" min="1" max="50" step="1" value="5" />
+        <button class="btn" id="searchBtn" type="button">Search nearby</button>
+        <div class="hint">Tip: click anywhere on the map to search around that point.</div>
+        <div class="status-line" id="searchStatus"></div>
+      </section>
+
+      <section class="card">
+        <h2>Nearby results <span class="count" id="resultCount"></span></h2>
+        <ul class="results" id="results"><li class="meta">No search yet.</li></ul>
+      </section>
+
+      <section class="card">
+        <h2>Status legend <span class="count" id="vehicleCount"></span></h2>
+        <div class="legend" id="legend"></div>
+      </section>
+    </aside>
+
+    <div id="map" role="region" aria-label="Map of fleet vehicles"></div>
+  </main>
+
+  <footer>Developed by <strong>Ashfaaq Feroz Muhammad</strong> · BITS ID <strong>2023EBCS005</strong> · Backend and API Development – BITS Pilani</footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    /* Fleet Management System – map client. Talks only to the API Gateway (/api/*). */
+    (function () {
+      const STATUS_COLORS = {
+        active: '#16a34a', idle: '#2563eb', maintenance: '#f59e0b', offline: '#6b7280', emergency: '#dc2626',
+      };
+      const $ = (id) => document.getElementById(id);
+      const store = {
+        get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+        set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+      };
+      const state = { token: store.get('fleet.token'), vehicles: [], markers: new Map(), circle: null, centerMarker: null };
+
+      // ---------------- map & tiles (light / dark toggle)
+      const map = L.map('map', { zoomControl: true }).setView([10.55, 76.1], 8);
+      const tiles = {
+        light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19, attribution: '&copy; OpenStreetMap contributors',
+        }),
+        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19, attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        }),
+      };
+      let theme = store.get('fleet.theme') === 'dark' ? 'dark' : 'light';
+      function applyTheme() {
+        document.documentElement.setAttribute('data-theme', theme);
+        Object.values(tiles).forEach((t) => map.removeLayer(t));
+        tiles[theme].addTo(map);
+        $('themeToggle').textContent = theme === 'dark' ? '☀️ Light map' : '🌙 Dark map';
+        store.set('fleet.theme', theme);
+      }
+      $('themeToggle').addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(); });
+      applyTheme();
+
+      // ---------------- legend
+      $('legend').innerHTML = Object.entries(STATUS_COLORS)
+        .map(([s, c]) => `<span><i class="dot" style="background:${c}"></i>${s}</span>`).join('');
+
+      // ---------------- API helper
+      async function api(path, options = {}) {
+        const headers = { 'x-api-key': $('apiKey').value.trim(), ...(options.body ? { 'Content-Type': 'application/json' } : {}) };
+        if (state.token) headers.Authorization = `Bearer ${state.token}`;
+        const res = await fetch(path, { ...options, headers });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const e = body.error || {};
+          throw new Error(`${res.status} ${e.code || ''} – ${e.message || res.statusText}`);
+        }
+        return body;
+      }
+      const setStatus = (id, text, ok) => { const el = $(id); el.textContent = text; el.className = `status-line ${ok ? 'ok' : 'err'}`; };
+      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const timeAgo = (iso) => {
+        if (!iso) return 'never';
+        const s = Math.round((Date.now() - new Date(iso)) / 1000);
+        if (s < 60) return `${s}s ago`; if (s < 3600) return `${Math.round(s / 60)} min ago`;
+        if (s < 86400) return `${Math.round(s / 3600)} h ago`; return new Date(iso).toLocaleString();
+      };
+
+      // ---------------- vehicles
+      function icon(status) {
+        return L.divIcon({
+          className: `vmarker ${status}`,
+          html: `<div class="pin" style="background:${STATUS_COLORS[status] || '#334155'}"></div>`,
+          iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10],
+        });
+      }
+      function popupHtml(v, distanceKm) {
+        const color = STATUS_COLORS[v.status] || '#334155';
+        return `<b>${esc(v.registrationNumber)}</b><br>${esc(v.make)} ${esc(v.model)} · ${esc(v.type)}<br>
+          Status: <span class="badge" style="background:${color}">${esc(v.status)}</span><br>
+          ${distanceKm !== undefined ? `Distance: <b>${distanceKm} km</b><br>` : ''}
+          Last update: ${timeAgo(v.lastLocationAt || v.updatedAt)}<br>
+          <span style="color:#64748b">${v.position.lat.toFixed(5)}, ${v.position.lng.toFixed(5)}</span>`;
+      }
+      async function loadVehicles(fit) {
+        const { data, total } = await api('/api/vehicles?limit=100');
+        state.vehicles = data.filter((v) => v.position);
+        state.markers.forEach((m) => map.removeLayer(m));
+        state.markers.clear();
+        state.vehicles.forEach((v) => {
+          const m = L.marker([v.position.lat, v.position.lng], { icon: icon(v.status), title: v.registrationNumber })
+            .bindPopup(popupHtml(v)).addTo(map);
+          state.markers.set(v.id, m);
+        });
+        $('vehicleCount').textContent = `${state.vehicles.length} on map / ${total} total`;
+        if (fit && state.vehicles.length) {
+          map.fitBounds(L.latLngBounds(state.vehicles.map((v) => [v.position.lat, v.position.lng])).pad(0.15));
+        }
+      }
+
+      // ---------------- auth
+      async function connect(fit = true) {
+        try {
+          const { claims } = await api('/api/users/verify');
+          setStatus('authStatus', `✔ Connected as ${claims.name} (${claims.role})`, true);
+          await loadVehicles(fit);
+        } catch (err) {
+          setStatus('authStatus', `✖ ${err.message}`, false);
+        }
+      }
+      $('loginBtn').addEventListener('click', async () => {
+        const btn = $('loginBtn'); btn.disabled = true;
+        try {
+          state.token = null;
+          const { token } = await api('/api/users/login', {
+            method: 'POST', body: JSON.stringify({ email: $('email').value.trim(), password: $('password').value }),
+          });
+          state.token = token; store.set('fleet.token', token);
+          await connect(true);
+        } catch (err) {
+          setStatus('authStatus', `✖ ${err.message}`, false);
+        } finally { btn.disabled = false; }
+      });
+      $('useJwtBtn').addEventListener('click', () => {
+        state.token = $('jwt').value.trim().replace(/^Bearer\s+/i, ''); store.set('fleet.token', state.token); connect(true);
+      });
+
+      // ---------------- nearby search
+      $('radius').addEventListener('input', () => { $('radiusLabel').textContent = $('radius').value; });
+
+      $('geocodeBtn').addEventListener('click', async () => {
+        const address = $('address').value.trim();
+        if (!address) return setStatus('searchStatus', 'Type an address first', false);
+        try {
+          const geo = await api(`/api/maps/geocode?address=${encodeURIComponent(address)}`);
+          $('lat').value = geo.lat.toFixed(6); $('lng').value = geo.lng.toFixed(6);
+          setStatus('searchStatus', `📍 ${geo.displayName}${geo.cached ? ' (cached)' : ''}`, true);
+          await searchNearby();
+        } catch (err) { setStatus('searchStatus', `✖ ${err.message}`, false); }
+      });
+
+      async function searchNearby() {
+        const lat = Number($('lat').value); const lng = Number($('lng').value); const radiusKm = Number($('radius').value);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || $('lat').value === '' || $('lng').value === '') {
+          return setStatus('searchStatus', 'Enter coordinates, locate an address, or click the map', false);
+        }
+        try {
+          const res = await api(`/api/vehicles/nearby?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`);
+          if (state.circle) map.removeLayer(state.circle);
+          if (state.centerMarker) map.removeLayer(state.centerMarker);
+          state.circle = L.circle([lat, lng], {
+            radius: radiusKm * 1000, color: '#f59e0b', weight: 2, fillColor: '#f59e0b', fillOpacity: 0.12,
+          }).addTo(map);
+          state.centerMarker = L.marker([lat, lng], {
+            icon: L.divIcon({ className: '', html: '<div class="center-pin"></div>', iconSize: [14, 14], iconAnchor: [7, 7] }),
+          }).bindTooltip('Search centre').addTo(map);
+          map.fitBounds(state.circle.getBounds().pad(0.1));
+          renderResults(res.data);
+          if (!$('searchStatus').textContent.startsWith('📍')) setStatus('searchStatus', '', true);
+        } catch (err) { setStatus('searchStatus', `✖ ${err.message}`, false); }
+      }
+      $('searchBtn').addEventListener('click', searchNearby);
+      map.on('click', (e) => {
+        $('lat').value = e.latlng.lat.toFixed(6); $('lng').value = e.latlng.lng.toFixed(6);
+        setStatus('searchStatus', '', true); searchNearby();
+      });
+
+      function renderResults(list) {
+        $('resultCount').textContent = `${list.length} within ${$('radius').value} km`;
+        if (!list.length) { $('results').innerHTML = '<li class="meta">No vehicles in this radius.</li>'; return; }
+        $('results').innerHTML = list.map((v) => `
+          <li data-id="${esc(v.id)}">
+            <i class="dot" style="background:${STATUS_COLORS[v.status] || '#334155'}"></i>
+            <div><div class="reg">${esc(v.registrationNumber)}</div><div class="meta">${esc(v.status)} · ${esc(v.make)} ${esc(v.model)}</div></div>
+            <span class="dist">${v.distanceKm} km</span>
+          </li>`).join('');
+        list.forEach((v) => {
+          const m = state.markers.get(v.id);
+          if (m) m.setPopupContent(popupHtml(v, v.distanceKm));
+        });
+        $('results').querySelectorAll('li[data-id]').forEach((li) => li.addEventListener('click', () => {
+          const m = state.markers.get(li.dataset.id);
+          if (m) { map.setView(m.getLatLng(), Math.max(map.getZoom(), 14)); m.openPopup(); }
+        }));
+      }
+
+      // Restore a previous session and refresh markers every 20 s.
+      if (state.token) connect(true);
+      setInterval(() => { if (state.token) loadVehicles(false).catch(() => {}); }, 20000);
+    })();
+  </script>
+</body>
+</html>
