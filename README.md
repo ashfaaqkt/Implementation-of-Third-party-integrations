@@ -7,7 +7,7 @@
 | **Course** | Backend and API Development – BITS Pilani |
 | **Topic** | Fleet Management System – Third-party Integrations, API Gateway |
 
-A Node.js microservice backend for a fleet administrator. It tracks vehicle locations, finds nearby vehicles, sends SMS alerts for critical vehicle events and status changes, and documents every API in Swagger UI. All traffic goes through an **Express API Gateway** that handles routing, API-key verification and rate limiting. The project is tested with **Mocha + Chai**: 149 tests across all 7 flows in the brief.
+A Node.js microservice backend for a fleet administrator. It tracks vehicle locations, finds nearby vehicles, sends SMS alerts for critical vehicle events and status changes, and documents every API in Swagger UI. All traffic goes through an **Express API Gateway** that handles routing, API-key verification and rate limiting. The project is tested with **Mocha + Chai**: 150 tests across all 7 flows in the brief.
 
 - 🌐 **Live demo:** [fleet-management-system-au8x.onrender.com](https://fleet-management-system-au8x.onrender.com) · [Swagger UI](https://fleet-management-system-au8x.onrender.com/api-docs) · [Live map](https://fleet-management-system-au8x.onrender.com/map) · [Health](https://fleet-management-system-au8x.onrender.com/health)
   - Free Render instance: the first request after a quiet period can take about 50 s while it wakes up.
@@ -170,7 +170,7 @@ Full request/response models, examples and error codes are in **Swagger UI** at 
 ## Tests
 
 ```bash
-npm test                 # all 149 tests (spec output + HTML report in test-report/index.html)
+npm test                 # all 150 tests (spec output + HTML report in test-report/index.html)
 npm run test:coverage    # same with c8 coverage (coverage/index.html)
 npm run test:auth        # per flow: test:auth, test:vehicles, test:telemetry, test:status,
                          # test:rbac, test:nearby, test:gateway, test:docs, test:providers
@@ -189,7 +189,7 @@ The tests run fully offline and give the same result every run. They use an in-m
 | 7 | Gateway API key verification and rate limiting | `test/flows/07-gateway.flow.js` |
 | + | Swagger spec coverage, provider adapters | `08-swagger-docs.flow.js`, `09-providers.flow.js` |
 
-Latest local run: **149 passing**. Coverage: about 98% of lines and 87% of branches.
+Latest local run: **150 passing**. Coverage: about 98% of lines and 87% of branches.
 
 ## Deployment (Render + MongoDB Atlas)
 
