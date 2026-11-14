@@ -1,0 +1,16 @@
+{
+  "name": "@fleet/vehicle-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fleet Management System – Third-party Integrations, API Gateway: Vehicle/Fleet Service – vehicle registration, status updates with SMS triggers, GeoJSON nearby search",
+  "author": "Ashfaaq Feroz Muhammad (BITS ID: 2023EBCS005)",
+  "license": "MIT",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@fleet/shared": "1.0.0",
+    "express": "4.22.3"
+  }
+}
