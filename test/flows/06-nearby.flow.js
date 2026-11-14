@@ -120,6 +120,24 @@ describe('Flow 6 – Nearby vehicle search using mocked geolocation services', (
       expect(res.body.data.map((v) => v.registrationNumber)).to.deep.equal(['KL-NEAR-KAKKANAD']);
     });
 
+    it('falls back to the mock geocoder when Nominatim refuses (429) and does not cache that answer', async () => {
+      process.env.GEO_PROVIDER = 'nominatim';
+      process.env.GEO_FALLBACK_PROVIDER = 'mock';
+      try {
+        nock(NOMINATIM).get('/search').query(true).reply(429, 'Too Many Requests');
+        const res = await request(geo).get('/maps/geocode').query({ address: 'Vyttila Junction, Kochi' }).set(auth).expect(200);
+        expect(res.body).to.include({ lat: 9.9674, lng: 76.3185, provider: 'mock', fallbackFrom: 'nominatim', fallbackReason: 429, cached: false });
+        expect(await GeoCache.countDocuments({ query: 'Vyttila Junction, Kochi' })).to.equal(0);
+
+        nock(NOMINATIM).get('/reverse').query(true).reply(429, 'Too Many Requests');
+        const rev = await request(geo).get('/maps/reverse').query(PLACES.aluva).set(auth).expect(200);
+        expect(rev.body).to.include({ provider: 'mock', fallbackFrom: 'nominatim' });
+        expect(rev.body.displayName).to.contain('Aluva');
+      } finally {
+        delete process.env.GEO_FALLBACK_PROVIDER;
+      }
+    });
+
     it('accepts coordinates directly', async () => {
       const res = await request(geo).get('/maps/nearby').query({ ...CENTER, radiusKm: 5 }).set(auth).expect(200);
       expect(res.body.count).to.equal(2);

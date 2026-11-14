@@ -28,6 +28,10 @@ services:
         value: "1"
       - key: GEO_PROVIDER
         value: nominatim
+      # Nominatim often answers 429 to shared cloud IPs: fall back to the offline
+      # geocoder so the live demo keeps working (responses show fallbackFrom).
+      - key: GEO_FALLBACK_PROVIDER
+        value: mock
       - key: SMS_PROVIDER
         value: stub
       # Atlas is used in production – no need to download the local MongoDB binary at build time.

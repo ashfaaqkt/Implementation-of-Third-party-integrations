@@ -299,6 +299,8 @@ module.exports = {
       displayName: { type: 'string', example: 'MG Road, Ernakulam, Kochi, Kerala, India' },
       provider: { type: 'string', enum: ['nominatim', 'google', 'mock'], example: 'nominatim' },
       cached: { type: 'boolean', example: false, description: 'true when served from the MongoDB geocode cache' },
+      fallbackFrom: { type: 'string', example: 'nominatim', description: 'Only present when the primary provider failed and GEO_FALLBACK_PROVIDER answered instead' },
+      fallbackReason: { oneOf: [{ type: 'integer' }, { type: 'string' }], example: 429, description: 'Why the primary provider failed (HTTP status or network error code)' },
     },
   },
   ReverseGeoResult: {
@@ -309,6 +311,8 @@ module.exports = {
       displayName: { type: 'string', example: 'Mahatma Gandhi Road, Ernakulam, Kochi, Kerala, 682011, India' },
       address: { type: 'object', additionalProperties: true },
       provider: { type: 'string', example: 'nominatim' },
+      fallbackFrom: { type: 'string', example: 'nominatim', description: 'Only present when the primary provider failed and GEO_FALLBACK_PROVIDER answered instead' },
+      fallbackReason: { oneOf: [{ type: 'integer' }, { type: 'string' }], example: 429, description: 'Why the primary provider failed (HTTP status or network error code)' },
     },
   },
   DistanceResult: {

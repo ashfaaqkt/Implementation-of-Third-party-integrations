@@ -11,14 +11,14 @@ const sinon = require('sinon');
 const nominatim = require('../../services/geo-service/src/providers/nominatim');
 const google = require('../../services/geo-service/src/providers/google');
 const mockGeo = require('../../services/geo-service/src/providers/mock');
-const { getProvider } = require('../../services/geo-service/src/providers');
+const { getProvider, getFallbackProvider, callWithFallback } = require('../../services/geo-service/src/providers');
 const { haversineKm } = require('../../services/geo-service/src/haversine');
 const twilio = require('../../services/notification-service/src/providers/twilio');
 const stub = require('../../services/notification-service/src/providers/stub');
 const { getSmsProvider } = require('../../services/notification-service/src/providers');
 const { detectCriticalEvents } = require('../../services/telemetry-service/src/criticalEvents');
 
-const ENV_KEYS = ['GEO_PROVIDER', 'GOOGLE_MAPS_API_KEY', 'SMS_PROVIDER', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_FROM_NUMBER'];
+const ENV_KEYS = ['GEO_PROVIDER', 'GEO_FALLBACK_PROVIDER', 'GOOGLE_MAPS_API_KEY', 'SMS_PROVIDER', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_FROM_NUMBER'];
 
 describe('Third-party provider adapters (mocked with nock)', () => {
   let savedEnv;
@@ -104,6 +104,45 @@ describe('Third-party provider adapters (mocked with nock)', () => {
     it('falls back to Nominatim for an unknown provider name', () => {
       process.env.GEO_PROVIDER = 'bing';
       expect(getProvider().name).to.equal('nominatim');
+    });
+  });
+
+  describe('Geocoding fallback (GEO_FALLBACK_PROVIDER)', () => {
+    it('has no fallback unless GEO_FALLBACK_PROVIDER names a known provider', () => {
+      delete process.env.GEO_FALLBACK_PROVIDER;
+      expect(getFallbackProvider()).to.equal(null);
+      process.env.GEO_FALLBACK_PROVIDER = 'bing';
+      expect(getFallbackProvider()).to.equal(null);
+      process.env.GEO_FALLBACK_PROVIDER = 'mock';
+      expect(getFallbackProvider()).to.equal(mockGeo);
+    });
+
+    it('uses the fallback when Nominatim answers 429, and says so', async () => {
+      process.env.GEO_PROVIDER = 'nominatim';
+      process.env.GEO_FALLBACK_PROVIDER = 'mock';
+      nock('https://nominatim.openstreetmap.org').get('/search').query(true).reply(429, 'Too Many Requests');
+      const out = await callWithFallback('geocode', 'Vyttila, Kochi');
+      expect(out).to.deep.include({ provider: 'mock', fallbackFrom: 'nominatim', fallbackReason: 429 });
+      expect(out.result).to.include({ lat: 9.9674, lng: 76.3185 });
+    });
+
+    it('rethrows the 502 when no fallback is configured', async () => {
+      process.env.GEO_PROVIDER = 'nominatim';
+      delete process.env.GEO_FALLBACK_PROVIDER;
+      nock('https://nominatim.openstreetmap.org').get('/search').query(true).reply(429, 'Too Many Requests');
+      try {
+        await callWithFallback('geocode', 'Vyttila, Kochi');
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.status).to.equal(502);
+      }
+    });
+
+    it('does not fall back when the primary simply finds nothing', async () => {
+      process.env.GEO_PROVIDER = 'nominatim';
+      process.env.GEO_FALLBACK_PROVIDER = 'mock';
+      nock('https://nominatim.openstreetmap.org').get('/search').query(true).reply(200, []);
+      expect(await callWithFallback('geocode', 'Vyttila, Kochi')).to.deep.equal({ result: null, provider: 'nominatim' });
     });
   });
 

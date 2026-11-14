@@ -15,7 +15,7 @@ const {
   authenticateOrInternal,
   callService,
 } = require('@fleet/shared');
-const { getProvider } = require('./providers');
+const { getProvider, callWithFallback } = require('./providers');
 const { haversineKm } = require('./haversine');
 const GeoCache = require('./models/GeoCache');
 
@@ -27,25 +27,30 @@ const normalise = (address) => address.trim().toLowerCase().replace(/\s+/g, ' ')
 /**
  * Geocode with a MongoDB cache in front of the provider (Nominatim asks
  * clients not to repeat identical queries). Returns { lat, lng, displayName, provider, cached }.
+ * If the primary provider fails and GEO_FALLBACK_PROVIDER is set, the fallback's
+ * answer is returned with fallbackFrom/fallbackReason and is NOT cached, so the
+ * real provider is asked again next time.
  */
 async function geocodeAddress(address) {
-  const provider = getProvider();
-  const key = `${provider.name}|${normalise(address)}`;
+  const primary = getProvider();
+  const key = `${primary.name}|${normalise(address)}`;
 
   const cached = await GeoCache.findOneAndUpdate({ key }, { $inc: { hits: 1 } }, { new: true });
   if (cached) {
-    return { lat: cached.lat, lng: cached.lng, displayName: cached.displayName, provider: provider.name, cached: true };
+    return { lat: cached.lat, lng: cached.lng, displayName: cached.displayName, provider: primary.name, cached: true };
   }
 
-  const result = await provider.geocode(address);
+  const { result, ...source } = await callWithFallback('geocode', address);
   if (!result) throw ApiError.notFound('ADDRESS_NOT_FOUND', `No location found for address '${address}'`);
 
-  await GeoCache.updateOne(
-    { key },
-    { $setOnInsert: { key, provider: provider.name, query: address, ...result } },
-    { upsert: true }
-  );
-  return { ...result, provider: provider.name, cached: false };
+  if (!source.fallbackFrom) {
+    await GeoCache.updateOne(
+      { key },
+      { $setOnInsert: { key, provider: source.provider, query: address, ...result } },
+      { upsert: true }
+    );
+  }
+  return { ...result, ...source, cached: false };
 }
 
 /** "lat,lng" → { lat, lng } (Joi custom validator) */
@@ -73,10 +78,9 @@ router.get(
   '/reverse',
   validate(Joi.object({ lat: latitude().required(), lng: longitude().required() }), 'query'),
   asyncHandler(async (req, res) => {
-    const provider = getProvider();
-    const result = await provider.reverse(req.query.lat, req.query.lng);
+    const { result, ...source } = await callWithFallback('reverse', req.query.lat, req.query.lng);
     if (!result) throw ApiError.notFound('ADDRESS_NOT_FOUND', 'No address found for these coordinates');
-    res.json({ lat: req.query.lat, lng: req.query.lng, ...result, provider: provider.name });
+    res.json({ lat: req.query.lat, lng: req.query.lng, ...result, ...source });
   })
 );
 
