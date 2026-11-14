@@ -1,0 +1,17 @@
+{
+  "name": "@fleet/geo-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fleet Management System – Third-party Integrations, API Gateway: Geolocation Service – OpenStreetMap Nominatim / Google Maps geocoding, reverse geocoding, distance and nearby search",
+  "author": "Ashfaaq Feroz Muhammad (BITS ID: 2023EBCS005)",
+  "license": "MIT",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@fleet/shared": "1.0.0",
+    "axios": "1.7.9",
+    "express": "4.22.3"
+  }
+}
