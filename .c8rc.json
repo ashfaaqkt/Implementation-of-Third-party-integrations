@@ -1,0 +1,7 @@
+{
+  "all": true,
+  "include": ["gateway/src/**/*.js", "services/*/src/**/*.js", "shared/src/**/*.js"],
+  "exclude": ["**/server.js", "gateway/src/docs/paths/**"],
+  "reporter": ["text-summary", "text", "html"],
+  "report-dir": "coverage"
+}
