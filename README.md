@@ -9,7 +9,7 @@
 
 A Node.js microservice backend for a fleet administrator. It tracks vehicle locations, finds nearby vehicles, sends SMS alerts for critical vehicle events and status changes, and documents every API in Swagger UI. All traffic goes through an **Express API Gateway** that handles routing, API-key verification and rate limiting. The project is tested with **Mocha + Chai**: 150 tests across all 7 flows in the brief.
 
-- 🌐 **Live demo:** [fleet-management-system-au8x.onrender.com](https://fleet-management-system-au8x.onrender.com) · [Swagger UI](https://fleet-management-system-au8x.onrender.com/api-docs) · [Live map](https://fleet-management-system-au8x.onrender.com/map) · [Health](https://fleet-management-system-au8x.onrender.com/health)
+- 🌐 **Live demo:** [https://fleet-management-system-au8x.onrender.com/map](https://fleet-management-system-au8x.onrender.com/map) · [Swagger UI](https://fleet-management-system-au8x.onrender.com/api-docs) · [Health](https://fleet-management-system-au8x.onrender.com/health)
   - Free Render instance: the first request after a quiet period can take about 50 s while it wakes up.
   - Demo API key `devkey123`, admin login `admin@fleet.local` / `Admin@123` (seeded test data only).
 - 🖼️ [Screenshots](#screenshots)
@@ -204,7 +204,7 @@ Latest local run: **150 passing**. Coverage: about 98% of lines and 87% of branc
 5. Nominatim often answers **429** to Render's shared outbound IPs, so `render.yaml` sets `GEO_FALLBACK_PROVIDER=mock`. Geocoding responses on the live site may show `"provider": "mock", "fallbackFrom": "nominatim"`; locally they come from Nominatim.
 6. Load the demo data into Atlas from your machine: `MONGO_URI="<atlas string>" npm run seed`.
 
-**Deployed link:** [https://fleet-management-system-au8x.onrender.com](https://fleet-management-system-au8x.onrender.com): services on Render (free plan), data in MongoDB Atlas (M0).
+**Deployed link:** [https://fleet-management-system-au8x.onrender.com/map](https://fleet-management-system-au8x.onrender.com/map): services on Render (free plan), data in MongoDB Atlas (M0).
 
 ## Design decisions and assumptions
 
