@@ -185,6 +185,20 @@ const swaggerUiOptions = {
       content: '🚚 Fleet Management System API  ·  ${config.AUTHOR.author}  ·  BITS ID ${config.AUTHOR.bitsId}';
       color: #fff; font: 600 17px/1.4 system-ui, -apple-system, Segoe UI, sans-serif; letter-spacing: .2px;
     }
+    .swagger-ui .topbar-wrapper::after {
+      content: ''; width: 58px; height: 22px; margin-left: 10px; flex: none; border-radius: 4px;
+      background: #fff url('/assets/bits-logo.svg') center / contain no-repeat; background-origin: content-box; padding: 2px 4px;
+    }
+    #swagger-ui::after {
+      content: '© 2026 ${config.AUTHOR.author} · BITS ID ${config.AUTHOR.bitsId} · ${config.AUTHOR.course} · Released under the MIT License';
+      display: block; margin-top: 24px; padding: 12px 16px 12px 96px; min-height: 22px;
+      background:
+        url('/assets/bits-logo.svg') 20px center / 62px 24px no-repeat,
+        linear-gradient(#fff, #fff) 16px center / 70px 30px no-repeat,
+        #1e293b;
+      border-top: 3px solid #f59e0b;
+      color: #cbd5e1; font: 12.5px/22px system-ui, -apple-system, Segoe UI, sans-serif;
+    }
     .swagger-ui .info .title { color: #1e293b; }
     .swagger-ui .info .title small.version-stamp { background: #f59e0b; }
     .swagger-ui .btn.authorize { color: #b45309; border-color: #f59e0b; }

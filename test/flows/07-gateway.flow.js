@@ -80,6 +80,20 @@ describe('Flow 7 – API Gateway: API keys, routing, rate limiting, errors', () 
       expect(map.text).to.contain('Developed by <strong>Ashfaaq Feroz Muhammad</strong>');
     });
 
+    it('serves the BITS Pilani logo used by /map and Swagger UI without an API key', async () => {
+      const logo = await request(gateway).get('/assets/bits-logo.svg').buffer(true).parse((res, cb) => {
+        let body = '';
+        res.on('data', (c) => { body += c; });
+        res.on('end', () => cb(null, body));
+      }).expect(200);
+      expect(logo.headers['content-type']).to.match(/^image\/svg\+xml/);
+      expect(logo.body).to.contain('<svg');
+      const map = await request(gateway).get('/map').expect(200);
+      expect(map.text).to.contain('src="/assets/bits-logo.svg"').and.to.contain('© 2026 Ashfaaq Feroz Muhammad');
+      const docs = await request(gateway).get('/api-docs/').expect(200);
+      expect(docs.text).to.contain("url('/assets/bits-logo.svg')");
+    });
+
     it('every response carries x-developed-by and x-request-id headers', async () => {
       const res = await request(gateway).get('/health');
       expect(res.headers['x-developed-by']).to.equal('Ashfaaq Feroz Muhammad (2023EBCS005)');

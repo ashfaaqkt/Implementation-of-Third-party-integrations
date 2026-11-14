@@ -20,6 +20,7 @@ const { createServiceProxy } = require('./proxy');
 const { buildOpenApiSpec, swaggerUiOptions } = require('./docs/swagger');
 
 const PUBLIC_DIR = path.resolve(__dirname, '../../public');
+const BITS_LOGO = path.resolve(__dirname, '../../docs/assets/BITS Logo.svg');
 
 /** Ping every downstream service's /health (short timeout) for GET /health. */
 async function checkServices(routes) {
@@ -132,6 +133,7 @@ function createGateway(overrides = {}) {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec, swaggerUiOptions));
 
   app.get('/map', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'map.html')));
+  app.get('/assets/bits-logo.svg', (_req, res) => res.type('image/svg+xml').sendFile(BITS_LOGO, { maxAge: '7d' }));
   app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
   // ---------------------------------------------------------------- /api/*
