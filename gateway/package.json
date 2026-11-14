@@ -1,0 +1,24 @@
+{
+  "name": "@fleet/gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fleet Management System – Third-party Integrations, API Gateway: Express API Gateway with routing, API key verification, rate limiting, Swagger UI and the Leaflet map page",
+  "author": "Ashfaaq Feroz Muhammad (BITS ID: 2023EBCS005)",
+  "license": "MIT",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@fleet/shared": "1.0.0",
+    "axios": "1.7.9",
+    "cors": "2.8.5",
+    "express": "4.22.3",
+    "express-rate-limit": "7.5.1",
+    "helmet": "8.1.0",
+    "http-proxy-middleware": "3.0.5",
+    "morgan": "1.10.0",
+    "swagger-jsdoc": "6.2.8",
+    "swagger-ui-express": "5.0.1"
+  }
+}
