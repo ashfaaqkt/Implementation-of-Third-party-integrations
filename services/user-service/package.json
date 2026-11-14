@@ -1,0 +1,17 @@
+{
+  "name": "@fleet/user-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fleet Management System – Third-party Integrations, API Gateway: User Service – registration, login, JWT issuing/verification and role management",
+  "author": "Ashfaaq Feroz Muhammad (BITS ID: 2023EBCS005)",
+  "license": "MIT",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@fleet/shared": "1.0.0",
+    "bcryptjs": "2.4.3",
+    "express": "4.22.3"
+  }
+}
