@@ -78,6 +78,8 @@ function createGateway(overrides = {}) {
           'upgrade-insecure-requests': null,
         },
       },
+      // Send the origin as Referer to third parties (OSM tile servers block requests without one).
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
       crossOriginEmbedderPolicy: false,
     })
   );

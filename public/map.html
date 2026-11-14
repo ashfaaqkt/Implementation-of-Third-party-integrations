@@ -223,11 +223,14 @@
       // ---------------- map & tiles (light / dark toggle)
       const map = L.map('map', { zoomControl: true }).setView([10.55, 76.1], 8);
       const tiles = {
-        light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        light: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19, attribution: '&copy; OpenStreetMap contributors',
+          // OSM tile policy requires a Referer header on browser tile requests.
+          referrerPolicy: 'strict-origin-when-cross-origin',
         }),
         dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
           maxZoom: 19, attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+          referrerPolicy: 'strict-origin-when-cross-origin',
         }),
       };
       let theme = store.get('fleet.theme') === 'dark' ? 'dark' : 'light';
