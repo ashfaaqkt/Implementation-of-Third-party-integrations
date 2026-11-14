@@ -1,0 +1,9 @@
+node_modules
+**/node_modules
+.env
+.data
+coverage
+test-report
+screenshots
+.git
+*_PROMPT.md

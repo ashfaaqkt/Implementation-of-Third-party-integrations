@@ -1,0 +1,38 @@
+# Fleet Management System – Third-party Integrations, API Gateway
+# Author : Ashfaaq Feroz Muhammad | BITS ID: 2023EBCS005
+# Course : Backend and API Development – BITS Pilani
+# File   : .github/workflows/test.yml – runs the Mocha/Chai suite with coverage on every push and pull request
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: npm test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Cache MongoDB binary (mongodb-memory-server)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}
+      - run: npm ci
+      - run: npm run test:coverage
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-node-${{ matrix.node }}
+          path: |
+            test-report/
+            coverage/

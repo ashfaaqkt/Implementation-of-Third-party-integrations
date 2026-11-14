@@ -1,0 +1,73 @@
+# ---------------------------------------------------------------------------
+# Fleet Management System – Third-party Integrations, API Gateway
+# Author : Ashfaaq Feroz Muhammad | BITS ID: 2023EBCS005
+# Course : Backend and API Development – BITS Pilani
+# File   : docker-compose.yml – optional: MongoDB + 5 services + gateway as separate containers
+#
+#   docker compose up --build
+#   docker compose run --rm seed        # load demo users and vehicles
+#   open http://localhost:8080/api-docs
+# ---------------------------------------------------------------------------
+x-service: &service
+  build: .
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  environment: &env
+    MONGO_URI: mongodb://mongo:27017/
+    USER_SERVICE_URL: http://user-service:4001
+    VEHICLE_SERVICE_URL: http://vehicle-service:4002
+    TELEMETRY_SERVICE_URL: http://telemetry-service:4003
+    GEO_SERVICE_URL: http://geo-service:4004
+    NOTIFICATION_SERVICE_URL: http://notification-service:4005
+  depends_on:
+    - mongo
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+
+  user-service:
+    <<: *service
+    command: node services/user-service/src/server.js
+
+  vehicle-service:
+    <<: *service
+    command: node services/vehicle-service/src/server.js
+
+  telemetry-service:
+    <<: *service
+    command: node services/telemetry-service/src/server.js
+
+  geo-service:
+    <<: *service
+    command: node services/geo-service/src/server.js
+
+  notification-service:
+    <<: *service
+    command: node services/notification-service/src/server.js
+
+  gateway:
+    <<: *service
+    command: node gateway/src/server.js
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - vehicle-service
+      - telemetry-service
+      - geo-service
+      - notification-service
+
+  seed:
+    <<: *service
+    command: node scripts/seed.js
+    restart: "no"
+    profiles: ["tools"]
+
+volumes:
+  mongo-data:

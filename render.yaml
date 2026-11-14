@@ -1,0 +1,35 @@
+# Fleet Management System – Third-party Integrations, API Gateway
+# Author : Ashfaaq Feroz Muhammad | BITS ID: 2023EBCS005
+# Course : Backend and API Development – BITS Pilani
+# File   : render.yaml – Render Blueprint: one free web service running everything (npm run start:all)
+#
+# Render → New → Blueprint → pick this repo. Then set MONGO_URI (MongoDB Atlas)
+# in the service's Environment tab. Secrets are generated automatically.
+services:
+  - type: web
+    name: fleet-management-system
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run start:all
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: INTERNAL_SERVICE_TOKEN
+        generateValue: true
+      - key: API_KEYS
+        value: devkey123:standard,partnerkey456:premium,demokey789:demo
+      - key: TRUST_PROXY
+        value: "1"
+      - key: GEO_PROVIDER
+        value: nominatim
+      - key: SMS_PROVIDER
+        value: stub
+      # Atlas is used in production – no need to download the local MongoDB binary at build time.
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
