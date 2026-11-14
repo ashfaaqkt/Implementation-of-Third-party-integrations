@@ -7,8 +7,12 @@
 | **Course** | Backend and API Development – BITS Pilani |
 | **Topic** | Fleet Management System – Third-party Integrations, API Gateway |
 
-A Node.js microservice backend for a fleet administrator. It tracks vehicle locations, finds nearby vehicles, sends SMS alerts for critical vehicle events and status changes, and documents every API in Swagger UI. All traffic goes through an **Express API Gateway** that handles routing, API-key verification and rate limiting. The project is tested with **Mocha + Chai**: 144 tests across all 7 flows in the brief.
+A Node.js microservice backend for a fleet administrator. It tracks vehicle locations, finds nearby vehicles, sends SMS alerts for critical vehicle events and status changes, and documents every API in Swagger UI. All traffic goes through an **Express API Gateway** that handles routing, API-key verification and rate limiting. The project is tested with **Mocha + Chai**: 149 tests across all 7 flows in the brief.
 
+- 🌐 **Live demo:** [fleet-management-system-au8x.onrender.com](https://fleet-management-system-au8x.onrender.com) · [Swagger UI](https://fleet-management-system-au8x.onrender.com/api-docs) · [Live map](https://fleet-management-system-au8x.onrender.com/map) · [Health](https://fleet-management-system-au8x.onrender.com/health)
+  - Free Render instance: the first request after a quiet period can take about 50 s while it wakes up.
+  - Demo API key `devkey123`, admin login `admin@fleet.local` / `Admin@123` (seeded test data only).
+- 🖼️ [Screenshots](#screenshots)
 
 ---
 
@@ -157,7 +161,7 @@ Full request/response models, examples and error codes are in **Swagger UI** at 
 
 ## Third-party integrations
 
-**Geolocation:** the default is OpenStreetMap **Nominatim** (no API key needed). Results are cached in MongoDB for 30 days, requests are throttled to 1 per second, and each request sends an identifying `User-Agent`. To use **Google Maps**, set `GEO_PROVIDER=google` and `GOOGLE_MAPS_API_KEY=<key>`. `GEO_PROVIDER=mock` is an offline geocoder used by the tests.
+**Geolocation:** the default is OpenStreetMap **Nominatim** (no API key needed). Results are cached in MongoDB for 30 days, requests are throttled to 1 per second, and each request sends an identifying `User-Agent`. To use **Google Maps**, set `GEO_PROVIDER=google` and `GOOGLE_MAPS_API_KEY=<key>`. `GEO_PROVIDER=mock` is an offline geocoder used by the tests. `GEO_FALLBACK_PROVIDER=mock` adds a safety net: if the primary provider fails (for example Nominatim answering **429** to a shared cloud IP, as happens on Render), the request is answered by the fallback, and the response says so with `fallbackFrom` and `fallbackReason`. Fallback answers are not cached, so the real provider is tried again next time. The Render deployment uses this setting.
 
 **SMS:** the default `stub` provider prints a formatted "📱 SMS SENT" box in the notification-service console and stores the record. Numbers ending in `0000` always fail, and `SMS_STUB_FAIL_RATE` (0–1) adds random failures. Each SMS is retried once, then marked `sent` or `failed`. To use the **Twilio sandbox**, set `SMS_PROVIDER=twilio`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM_NUMBER`. On a trial account, Twilio only delivers to verified numbers.
 
@@ -166,7 +170,7 @@ Full request/response models, examples and error codes are in **Swagger UI** at 
 ## Tests
 
 ```bash
-npm test                 # all 144 tests (spec output + HTML report in test-report/index.html)
+npm test                 # all 149 tests (spec output + HTML report in test-report/index.html)
 npm run test:coverage    # same with c8 coverage (coverage/index.html)
 npm run test:auth        # per flow: test:auth, test:vehicles, test:telemetry, test:status,
                          # test:rbac, test:nearby, test:gateway, test:docs, test:providers
@@ -185,7 +189,7 @@ The tests run fully offline and give the same result every run. They use an in-m
 | 7 | Gateway API key verification and rate limiting | `test/flows/07-gateway.flow.js` |
 | + | Swagger spec coverage, provider adapters | `08-swagger-docs.flow.js`, `09-providers.flow.js` |
 
-Latest local run: **144 passing**. Coverage: about 98% of lines and 87% of branches.
+Latest local run: **149 passing**. Coverage: about 98% of lines and 87% of branches.
 
 ## Deployment (Render + MongoDB Atlas)
 
@@ -197,7 +201,10 @@ Latest local run: **144 passing**. Coverage: about 98% of lines and 87% of branc
 3. **Separate services (optional):** deploy each service with `node services/<name>/src/server.js` and the gateway with `node gateway/src/server.js`. Set `USER_SERVICE_URL`, `VEHICLE_SERVICE_URL`, `TELEMETRY_SERVICE_URL`, `GEO_SERVICE_URL` and `NOTIFICATION_SERVICE_URL` on every service to the Render URLs.
 4. Free Render services sleep when idle, so the first request can take about 50 s.
 
-**Deployed link:** _pending_
+5. Nominatim often answers **429** to Render's shared outbound IPs, so `render.yaml` sets `GEO_FALLBACK_PROVIDER=mock`. Geocoding responses on the live site may show `"provider": "mock", "fallbackFrom": "nominatim"`; locally they come from Nominatim.
+6. Load the demo data into Atlas from your machine: `MONGO_URI="<atlas string>" npm run seed`.
+
+**Deployed link:** [https://fleet-management-system-au8x.onrender.com](https://fleet-management-system-au8x.onrender.com): services on Render (free plan), data in MongoDB Atlas (M0).
 
 ## Design decisions and assumptions
 
@@ -210,6 +217,109 @@ Latest local run: **144 passing**. Coverage: about 98% of lines and 87% of branc
 - **Gateway body parsing:** the gateway parses JSON so it can return 400/413 itself, then re-streams the body to the target (`fixRequestBody`).
 - **Rate limit store** is in memory for each gateway instance. A shared store such as Redis would be needed with several gateway instances.
 - **Zero-setup dev:** with no `MONGO_URI`, a persistent local MongoDB (`mongodb-memory-server`) starts on port 27018.
+
+## Screenshots
+
+<details open>
+<summary>24 screenshots from the walkthrough (click to collapse)</summary>
+
+**01. Gateway `/health`: all 5 services up**
+
+![Gateway `/health`: all 5 services up](screenshots/01-health-check.png)
+
+**02. Seeding and starting the gateway and services**
+
+![Seeding and starting the gateway and services](screenshots/02-gateway-banner.png)
+
+**03. Swagger UI overview**
+
+![Swagger UI overview](screenshots/03-swagger-overview.png)
+
+**04. Swagger: API key and JWT authorisation**
+
+![Swagger: API key and JWT authorisation](screenshots/04-swagger-authorize.png)
+
+**04b. Swagger: documented endpoint and responses**
+
+![Swagger: documented endpoint and responses](screenshots/04b-swagger-endpoint.png)
+
+**04c. Swagger: Try it out**
+
+![Swagger: Try it out](screenshots/04c-swagger-try-it-out.png)
+
+**04d. Login through the gateway → JWT**
+
+![Login through the gateway → JWT](screenshots/04d-login-jwt.png)
+
+**05. Vehicle registered by address, geocoded by Nominatim**
+
+![Vehicle registered by address, geocoded by Nominatim](screenshots/05-register-vehicle-geocoded.png)
+
+**06. GPS telemetry stored, vehicle location updated**
+
+![GPS telemetry stored, vehicle location updated](screenshots/06-telemetry.png)
+
+**07. Nearby search with `$geoNear`, sorted by distance**
+
+![Nearby search with `$geoNear`, sorted by distance](screenshots/07-nearby-search.png)
+
+**08. Live map: OSM tiles, markers and nearby circle**
+
+![Live map: OSM tiles, markers and nearby circle](screenshots/08-map-nearby.png)
+
+**09. Critical event: low battery detected**
+
+![Critical event: low battery detected](screenshots/09-critical-event.png)
+
+**10. SMS alert sent to the admin (stub provider)**
+
+![SMS alert sent to the admin (stub provider)](screenshots/10-sms-console.png)
+
+**11. Status change → SMS to admins, manager and driver, with retry and failure**
+
+![Status change → SMS to admins, manager and driver, with retry and failure](screenshots/11-status-change-sms.png)
+
+**12. Notification records**
+
+![Notification records](screenshots/12-notifications.png)
+
+**12b. Failed notifications and stats**
+
+![Failed notifications and stats](screenshots/12b-notifications.png)
+
+**13. Gateway: missing key 401, wrong key 403**
+
+![Gateway: missing key 401, wrong key 403](screenshots/13-api-key-401-403.png)
+
+**14. Gateway routing headers (`x-request-id`, `x-served-by`)**
+
+![Gateway routing headers (`x-request-id`, `x-served-by`)](screenshots/14-routing-headers.png)
+
+**15. Rate limiting: 5 × 200, then 429 with `Retry-After`**
+
+![Rate limiting: 5 × 200, then 429 with `Retry-After`](screenshots/15-rate-limit-429.png)
+
+**16. Service down → 503 `SERVICE_UNAVAILABLE`**
+
+![Service down → 503 `SERVICE_UNAVAILABLE`](screenshots/16-service-down-503.png)
+
+**17. Mocha/Chai test run**
+
+![Mocha/Chai test run](screenshots/17-npm-test.png)
+
+**18. Mochawesome HTML test report**
+
+![Mochawesome HTML test report](screenshots/18-test-report.png)
+
+**19. c8 coverage report**
+
+![c8 coverage report](screenshots/19-coverage.png)
+
+**20. Deployed on Render (Live)**
+
+![Deployed on Render (Live)](screenshots/20-render-deployed.png)
+
+</details>
 
 ## Author
 
