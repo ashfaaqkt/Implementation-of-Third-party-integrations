@@ -1,0 +1,18 @@
+{
+  "name": "@fleet/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fleet Management System – Third-party Integrations, API Gateway: shared middleware (JWT auth, role guard, validation, errors, logger, DB connection)",
+  "author": "Ashfaaq Feroz Muhammad (BITS ID: 2023EBCS005)",
+  "license": "MIT",
+  "main": "src/index.js",
+  "dependencies": {
+    "axios": "1.7.9",
+    "dotenv": "16.6.1",
+    "express": "4.22.3",
+    "joi": "17.13.9",
+    "jsonwebtoken": "9.0.3",
+    "mongodb-memory-server": "10.4.3",
+    "mongoose": "8.24.9"
+  }
+}
