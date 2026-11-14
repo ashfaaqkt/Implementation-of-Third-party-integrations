@@ -130,6 +130,7 @@ function createGateway(overrides = {}) {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec, swaggerUiOptions));
 
   app.get('/map', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'map.html')));
+  app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
   // ---------------------------------------------------------------- /api/*
   app.use('/api', apiKeyAuth(apiKeys));

@@ -8,6 +8,8 @@
 #   docker compose run --rm seed        # load demo users and vehicles
 #   open http://localhost:8080/api-docs
 # ---------------------------------------------------------------------------
+name: fleet-management
+
 x-service: &service
   build: .
   restart: unless-stopped

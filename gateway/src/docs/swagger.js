@@ -179,7 +179,7 @@ const swaggerUiOptions = {
   customSiteTitle: `Fleet Management API Docs – ${config.AUTHOR.author} (${config.AUTHOR.bitsId})`,
   swaggerOptions: { persistAuthorization: true, displayRequestDuration: true, docExpansion: 'list', tryItOutEnabled: false },
   customCss: `
-    .swagger-ui .topbar { background: #1e293b; border-bottom: 4px solid #f59e0b; padding: 12px 0; }
+    body .swagger-ui .topbar { background-color: #1e293b !important; border-bottom: 4px solid #f59e0b; padding: 12px 0; }
     .swagger-ui .topbar .link { display: none; }
     .swagger-ui .topbar-wrapper::before {
       content: '🚚 Fleet Management System API  ·  ${config.AUTHOR.author}  ·  BITS ID ${config.AUTHOR.bitsId}';
